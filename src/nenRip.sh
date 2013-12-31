@@ -301,7 +301,7 @@ init(){
 	[ ! -d ${FS_ROOT} ] && mkdir -p ${FS_ROOT}
 	cd ${FS_ROOT}
 	logit "Checking for binaries needed.."
-	which dagrab || BAIL=0
+	which dagrab >/dev/null 2>&1 || BAIL=0
 	which dagrab || echo "You need dagrab - get the source like wget http://web.tiscalinet.it/marcellou/dagrab-0.3.5.tar.gz & build it!"
 	which lame >/dev/null 2>&1 || BAIL=0
 	which lame || echo "You need lame - as root (or sudo) do apt-get install lame"
