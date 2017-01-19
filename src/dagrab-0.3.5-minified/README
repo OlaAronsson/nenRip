@@ -1,6 +1,13 @@
 DAGRAB - an audio cd grabber for linux.
 (C) 1998,1999 Marcello Urbani <murbani@libero.it>
 
+This version was patched by Ola Aronsson <ola@nollettnoll.net>
+in order to cope with CDs containing data tracks; see 
+
+dagrab.c_patch
+
+for details, the changes made dagrab-0.3.4 -> dagrab-0.3.5-minified.
+
 DISCLAIMER: 
 The author DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE.In no event
 shall I be liable for any kind of damage arising with the using of this 
