@@ -1,6 +1,6 @@
 #***nenRip 2.0***
 
-Script utility to rip CDs in ubuntu. Upon installation it will setup and install a .desktop file too so you can run it from your dash home directly. Example runs and details can be found at 
+Script utility to rip CDs in Linux (ie, systems supporting apt), I've been running it on various Debians and Ubuntus. Upon installation it will setup and install a .desktop file too so you can run it from your dash home directly. Example runs and details can be found at 
 
 http://www.thehole.black/nenRip
 
