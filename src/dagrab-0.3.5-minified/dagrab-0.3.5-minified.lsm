@@ -1,0 +1,15 @@
+Begin3
+Title: dagrab
+Version: 0.3.5-minified
+Entered-date: 26DEC16
+Description: dagrab reads digital audio from CD and puts it on wav files.
+             Removed the cddb-stuff, made it skip data-tracks /Ola. 
+Keywords: cdda cddb digital sampling cdgrab audio sound cdrom wav
+Author: murbani@libero.it (Marcello Urbani)/ola@nollettnoll.net (Ola Aronsson)
+Maintained-by: ola@nollettnoll.net (Ola Aronsson)
+Primary-site: http://nollettnoll.net
+Alternate-site: http://thehole.black
+              19Kb dagrab-0.3.5-minified.tar.gz
+Platforms: Linux, ide cdrom drive capable of digital audio extraction 
+Copying-policy: GPL
+End

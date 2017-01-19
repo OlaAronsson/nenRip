@@ -1,0 +1,29 @@
+COMPILING AND INSTALLING DAGRAB
+
+for linux 2.2.x, issuing the commands:
+
+make 
+make install
+
+should do it; for older kernels you may need to edit the Makefile and
+uncomment (i/e remove the # character) the line:
+
+#UCD=-DUSE_UCDROM
+
+before issuing the commands above.
+
+
+
+Note: by default make install puts the binary in /usr/local/bin,wich might 
+not be in your PATH variable, and so you will have to type
+
+/usr/local/bin/dagrab
+
+instead of only 
+
+dagrab
+
+you may fix this in several ways, the simplest is copying it by hand in a 
+directory in your PATH, such as /usr/bin (you usually need to be root to 
+put it there) or your private bin directory.
+

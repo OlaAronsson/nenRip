@@ -1,0 +1,51 @@
+DAGRAB - an audio cd grabber for linux.
+(C) 1998,1999 Marcello Urbani <murbani@libero.it>
+
+DISCLAIMER: 
+The author DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE.In no event
+shall I be liable for any kind of damage arising with the using of this 
+software. USE AT YOUR OWN RISK.
+Use with caution,as this program is a 'quick and dirty' hack with poor 
+error checking.
+
+NOTE: This program may not be used to circumvent copyrights.
+
+-----------------------------------------------------------------------------
+DAGRAB is a  program for reading audio tracks from a cdrom drive into wav
+sound files.
+
+It should work with any cdrom drive,provided that digital audio extraction 
+is supported from both the drive and its linux driver, but is only tested
+with IDE cdroms.
+
+For an index of cdrom drives that supports digital audio extraction, 
+take a look at these URLs:
+
+<http://www.tardis.ed.ac.uk/~psyche/pc/cdrom/CDDA.html>
+
+and
+
+<http://www.anime.net/~goemon/linux-cd/cdda-list.html>
+
+Many IDE/ATAPI drives supports it, but many don't.
+
+This program is just a hack i wrote because i haven't found a similar program 
+that worked good on my system.
+
+I think the problem is that the linux ide-cd driver only reads 8 sectors a time,
+so that any attempt to read more results in jitter inside the block.
+This assumption is supported from the fact that cdda2wav worked good on my 
+system if used with the option -n 8.Too bad, I only noticed it when my program 
+was almost finished.
+You can dramatically speed up audio extraction with both dagrab and cdda2wav
+by patching your kernel setting CDROM_NBLOCKS_BUFFER to a higher value (32 seems
+to be a good choice) and reading more sectors at a time.
+NOTE: don't use sectors per request higher than CDROM_NBLOCKS_BUFFER unless you 
+      own one of the few drives that don't require jitter correction.
+Sometimes, it makes a few jitter correction errors/track, but i usually can't 
+hear them in playback.
+
+CDDB support is not well tested.
+
+Please e-mail me if you notice a serious bug (I mean dangerous ones).
+

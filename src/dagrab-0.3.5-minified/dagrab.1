@@ -1,0 +1,318 @@
+.TH DAGRAB 1 24/06/1999 dagrab dagrab
+.SH NAME
+dagrab \- dumps digital audio from cdrom
+.SH SYNOPSIS
+.B dagrab
+[
+.B -h
+]
+[
+.B -i
+]
+[
+.B -d
+.I device
+]
+[
+.B -a
+]
+[
+.B -v
+]
+[
+.B -f
+.I file
+]
+[
+.B -o
+.I overlap
+]
+[
+.B -n
+.I sectors
+]
+[
+.B -k
+.I key length
+]
+[
+.B -r
+.I retries
+]
+[
+.B -t
+.I offset
+]
+[
+.B -m
+.I mode
+]
+[
+.B -e
+.I command
+]
+[
+.B -s
+]
+[
+.B -p
+]
+[
+.B -C
+]
+[
+.B -S
+]
+[
+.B -N
+]
+[
+.B -H host
+]
+[
+.B -P port
+]
+[
+.B -D dir
+]
+
+.SH DESCRIPTION
+.B dagrab
+is a program for reading audio tracks from a cdrom drive into
+RIFF WAVE (.wav) sound files.
+
+It should work with any cdrom drive, provided that digital
+audio extraction is supported from both the drive and its
+linux driver.
+
+For an index of cdrom drives that support digital audio
+extraction, take a look at these URLs:
+
+.RS 3
+http://www.tardis.ed.ac.uk/~psyche/pc/cdrom/CDDA.html
+.RE
+
+and
+
+.RS 3
+http://www.anime.net/~goemon/linux-cd/cdda-list.html
+.RE
+
+.SH OPTIONS
+.B -h
+.RS 3
+.B -h
+will print the help screen
+.RE
+
+.B -i
+.RS 3
+.B -i
+prints out the track list from the current cd. This includes
+track number, lba start and length, type of track, its time
+duration and needed length when dumped to disk.
+.RE
+
+.B -d
+.I device
+.RS 3
+.B -d
+.I device
+sets the cdrom device name. Default is /dev/cdrom (if you haven't done
+already: symlinking of your cdrom device to /dev/cdrom is ``standard'')
+.RE
+
+.B -a
+.RS 3
+.B -a
+dumps all tracks and ignores the optional track list.
+.RE
+
+.B -v
+.RS 3
+.B -v
+enables the verbose mode of dagrab. It will print warning
+messages to stderr while delivering some useful information to
+stdout. E.g. the rest time and speed factor will be displayed
+while dumping a track.
+.RE
+
+.B -f
+.I file
+.RS 3
+.B -f
+.I file
+sets the output name for dumping tracks. If the file exists,
+it will be overwritten. You can embed %02d in the string which
+will be replaced with the track number (counting from 1).
+Default is "track%02d.wav"
+.RE
+
+.B -o
+.I overlap
+.RS 3
+.B -o
+.I overlap
+sets the number of sectors which are used for jitter correction.
+Shouldn't be too high or you will get "jumps" in your dump.
+The default value is 3.
+.RE
+
+.B -n
+.I sectors
+.RS 3
+.B -n
+.I sectors
+will be read per request from the cdrom driver. (Read the note
+on IDE drives below)
+.RE
+
+.B -k
+.I key length
+.RS 3
+.B -k
+.I key length
+is the number of keys which must be equal for a match in
+jitter correction. Default value is 12.
+.RE
+
+.B -r
+.I retries
+.RS 3
+.B -r
+.I retries
+sets the number of times to reread sectors before a
+jitter error is given. Default is 40 times.
+.RE
+
+.B -t
+.I offset
+.RS 3
+.B -t
+.I offset
+sets the maximum offset to search for jitter correction. Default is 12.
+.RE
+
+.B -m
+.I mode
+.RS 3
+.B -t
+.I mode
+gives the standard mode for files. Also existing files will
+be chmod to this value. Default is 0660.
+.RE
+
+.B -e
+.I command
+.RS 3
+.B -e
+.I command
+will be executed after dumping a track. This can be used to automize
+converting the dumped data, for example. You can embed %s in the
+command which will be substituted with the filename of the track file.
+.RE
+
+.B -s
+.RS 3
+.B -s
+enables checking for free space before dumping the track to a file.
+However, if the file exists before, it will be overwritten (read:
+deleted) and \fBdagrab\fP skips to the next track.
+.RE
+
+.B -p
+.RS 3
+.B -p
+enables converting the stereo audio data to mono. 
+This doesn't select a special channel but the mixed information
+of both audio channels.
+.RE
+
+.B -C
+.RS 3
+.B -C
+enables the use of cddbp protocol to retrieve disk info.
+.RE
+
+.B -S
+.RS 3
+.B -S
+causes the program to look for cddb data in remote server and to save it in 
+the local database, wich for default is located in the 
+.B xmcd
+library directory.Implies 
+.B -C
+.RE
+
+.B -N
+.RS 3
+.B -N
+gives to each track the name reported by cddb; overrides 
+.B -f.
+It does not enable cddbp.
+.RE
+
+.B -H
+.I host
+.RS 3
+.B -H
+.I host
+is the remote cddb server, defaults to cddb.like.it.
+.RE
+
+.B -P
+.I port
+.RS 3
+.B -P
+.I port
+is the port to connect to on the remote server, defaults to 888.
+.RE
+
+.B -D
+.I dir
+.RS 3
+.B -D
+.I dir
+sets the base directory of the local cddb database; 
+it defaults to $XMCD_LIBDIR/cddb or /usr/lib/X11/xmcd/cddb if not defined.
+.RE
+
+.SH NOTES
+.B Gaining more speed with IDE drives
+.RS 3
+Edit \fI/usr/src/linux/drivers/block/ide-cd.c\fP and change the value
+defined for \fBCDROM_NBLOCKS_BUFFER\fP near line 202 to a higher value.
+A value of 32 works for me with a Toshiba XM-6201B (256KB buffer).
+After installing the new kernel, you may use the
+\fB-n\fP \fIsectors\fP option to tell \fBdagrab\fP to read more sectors
+at once.
+.RE
+
+.B Compatibility
+.RS 3
+\fBdagrab\fP should work with all drives supporting digital
+audio extraction (as long as linux kernel drivers supports that too).
+IDE drives are alwais supported by kernel, but many doesn't support 
+audio extracton;SCSI drives usually does, but there isn't a standard 
+way to do it, so often the kernel doesn't support that feature.
+If you need to extract audio from a SCSI drive, you can try with CDDA2WAV.
+.RE
+
+\fBdagrab\fP uses the term ``MB'' for MByte (2^20 bytes ==
+1024^2 bytes == 1,048,576 bytes)
+
+Legal note: This program may not be used to circumvent
+existing copyrights.
+
+.SH BUGS
+Unknown currently.
+
+Please send bug reports (fixes are even more welcome) to Marcello 
+Urbani <murbani@libero.it> or Sascha Schumann <sas@schell.de>
+
+.SH CREDITS
+Main author of \fBdagrab\fP is Marcello Urbani <murbani@libero.it>. 
+Patches, comments, bug reports etc are directed to him.
+
+Author of some \fBdagrab\fP extensions and man page is 
+Sascha Schumann <sas@schell.de>

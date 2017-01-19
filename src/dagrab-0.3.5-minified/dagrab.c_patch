@@ -1,0 +1,613 @@
+--- dagrab.c_old	1999-12-26 20:16:16.000000000 +0100
++++ dagrab.c_new	2017-01-09 22:32:39.000000000 +0100
+@@ -2,7 +2,7 @@
+    DAGRAB - dumps digital audio from cdrom to riff wave files
+ 
+    (C) 1998,1999 Marcello Urbani <murbani@libero.it>
+-
++  
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2, or (at your option)
+@@ -70,9 +70,10 @@
+  *
+  * - release 0.3.3
+  *   22/10/99
++ *
++ *  - release 0.3.5 minified : removed the cddb-stuff, implemented
++ *    support for skipping data tracks
+  */
+-
+-
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+@@ -105,14 +106,8 @@
+ #define IFRAMESIZE (CD_FRAMESIZE_RAW/sizeof(int))
+ #define BLEN 255
+ #define D_MODE 0660
+-#define CDDB_MAX  65535
+-#define CDDB_PORT 888
+-#define CDDB_PATH "/usr/lib/X11/xmcd/cddb"
+-#define CDDB_HOST "freedb.freedb.org"
+-//#define USE_CDDB (opt_save||opt_name)
+-#define USE_CDDB opt_cddb
+ #define PROGNAME "dagrab"
+-#define VERSION "0.3.4"
++#define VERSION "0.3.5 minified"
+ 
+ struct cd_trk_list{
+ 	int min;
+@@ -159,12 +154,18 @@
+ static int opt_mono=0;
+ static int retries=0;
+ 
+-static int opt_cddb=0;
+-static char *opt_cddb_path=CDDB_PATH;
+-static int opt_cddb_port=CDDB_PORT;
+-static char *opt_cddb_host=CDDB_HOST;
+-static int opt_save=0;			// save cddb info
+-static int opt_name=0;			// use cddb name for wavs
++// track.end-magic_pre_data_track_limit
++// before the data track
++struct Datatracks{
++int track_start;
++int byte_start;
++} d_tracks;
++
++static struct Datatracks new_dtracks(int t_start, int b_start){
++   struct Datatracks ds={t_start, b_start};
++   return ds;
++};
++static int magic_pre_data_track_limit = 11574;
+ 
+ struct Wavefile cd_newave(unsigned size)
+ {
+@@ -220,285 +221,6 @@
+ 	}
+ }
+ 
+-
+-// CDDB section
+-static int cddb_sock;
+-
+-int cddb_sum(int n)
+-{
+-	int	ret;
+-	n/=75; /*elimina i frames*/
+-	ret = 0;
+-	while (n > 0) {
+-		ret = ret + (n % 10);
+-		n = n / 10;
+-	}
+-	return (ret);
+-}
+-unsigned long cddb_discid(struct cd_trk_list *tl){
+-	int i,n,t,st;
+-	st=n=0;
+-	for (i=tl->min;i<=tl->max;i++) 
+-	   n+=cddb_sum(tl->starts[i-tl->min]+CD_MSF_OFFSET); 
+-	t=(tl->starts[tl->max-tl->min+1]-tl->starts[0])/75;
+-	return (n % 0xff) << 24 | t << 8 | (tl->max-tl->min+1);
+-}
+-//int make_socket (unsigned short int port,unsigned int addr)
+-int make_socket (unsigned short int port,struct hostent *addr)
+-{
+-  int sock;
+-  struct sockaddr_in name;
+-  /* Create the socket. */
+-  sock = socket (PF_INET, SOCK_STREAM, 0);
+-  if (sock < 0)
+-    {
+-      perror ("dagrab");
+-      exit (EXIT_FAILURE);
+-    }
+-  /* Give the socket a name. */
+-  name.sin_family = AF_INET;
+-  name.sin_port = htons (port);
+-//  name.sin_addr.s_addr = htonl (addr);
+-  memcpy(&name.sin_addr,addr->h_addr,addr->h_length);
+-  if(connect(sock,(struct sockaddr *) &name,sizeof(name))){
+-      perror ("dagrab");
+-      exit (EXIT_FAILURE);
+-  };
+-  return sock;
+-}
+-
+-void cddb_sendcmd(char *c)
+-{
+-//  printf("--> %s",c);
+-  write(cddb_sock,c,strlen(c));
+-}
+-
+-int cddb_getresp(char *c, int s)
+-{
+-  int a;
+-  fd_set re,wr,ex;
+-  struct timeval to;
+-  to.tv_sec=0;
+-  to.tv_usec=200000;
+-  FD_ZERO(&re);
+-  FD_ZERO(&wr);
+-  FD_ZERO(&ex);
+-  FD_SET(cddb_sock,&re);
+-  select(cddb_sock+1,&re,&wr,&ex,&to);
+-  a=read(cddb_sock,c,s);if(a>0)c[a]=0;
+-//  printf("<-- %s",c);
+-  if(c[0]!='2') return -1;else return a;
+-}
+-
+-int cddb_getresp2(char *c, int s)
+-{
+-  int a;
+-  fd_set re,wr,ex;
+-  struct timeval to;
+-  to.tv_sec=0;
+-  to.tv_usec=200000;
+-  FD_ZERO(&re);
+-  FD_ZERO(&wr);
+-  FD_ZERO(&ex);
+-  FD_SET(cddb_sock,&re);
+-  select(cddb_sock+1,&re,&wr,&ex,&to);
+-  a=read(cddb_sock,c,s);if(a>0)c[a]=0;
+-  return a;
+-}
+-
+-
+-int cddb_handshake(void){
+-  struct passwd	*pw;
+-  char *un,*hn,hn1[100];
+-  struct hostent *he;
+-  char buf[2001];
+-  struct hostent *hent;
+-  /* get the address */
+-  hent=gethostbyname(opt_cddb_host);
+-  if(hent==NULL) return 1;
+-  cddb_sock=make_socket(opt_cddb_port,hent);
+-  if(cddb_getresp(buf,2000)<0) return 1;
+-  /* Get login name from the password file if possible */
+-  if ((pw = getpwuid(getuid())) != NULL)
+-    un=pw->pw_name;
+-  else
+-    /* Try the LOGNAME environment variable */
+-    if ((un = (char *) getenv("LOGNAME")) == NULL)
+-      /* Try the USER environment variable */
+-      un = (char *) getenv("USER");
+-  if(un==NULL) un="unknown";
+-  if((gethostname(hn1,99)<0)||((he=gethostbyname(hn1))==NULL)||(he->h_name==NULL))
+-    hn="unknown";
+-  else 
+-    hn=(char *)he->h_name;
+-  sprintf(buf,"cddb hello %s %s %s %s\n",un,hn,PROGNAME,VERSION);
+-  cddb_sendcmd(buf);
+-  if(cddb_getresp(buf,2000)<0) return 1;
+-  return 0;
+-}
+-
+-int cddb_query(char *qs,char **id,char **gnr){
+-  char buf[2001],*p,*q;
+-  sprintf(buf,"cddb query %s\n",qs);
+-  cddb_sendcmd(buf);
+-  if(cddb_getresp(buf,2000)<0)return 1;
+-  p=buf+4;
+-  if (buf[1]=='1'){
+-     fprintf(stderr,"%s: cddb inexact matches found, picking first\n",PROGNAME);
+-     p=strchr(buf,'\n')+1;
+-  }
+-  q=strchr(p,' ');*q=0;*gnr=strdup(p);p=q+1;
+-  q=strchr(p,' ');*q=0;*id=strdup(p);p=q+1;
+-  if ((buf[1]=='1')&&(p[strlen(p)-3]!='.')) 
+-    do cddb_getresp(buf,2000);while (buf[strlen(buf)-3]!='.');
+-  return 0;
+-}
+-
+-int cddb_getdesc(char *gnr,char *id,char *data,int len){
+-  char buf[100];
+-  int i,a;
+-  char *q,*p,*t=malloc(len);
+-  if(t==NULL) return -1;
+-  sprintf(buf,"cddb read %s %s\n",gnr,id);
+-  cddb_sendcmd(buf);
+-  t[0]=0;a=i=0;
+-  if((i=cddb_getresp(t+a,len-a))<0) {
+-    return -1;}
+-  a=i;
+-  while (t[a-3]!='.'){
+-    i=cddb_getresp2(t+a,len-a);
+-    if(i<0) 
+-      return -1;
+-    a+=i;
+-  }
+-  t[a-3]=0;
+-  cddb_sendcmd("quit\n");
+-  close(cddb_sock);
+-//printf("%s",t);
+-  q=data;p=t;
+-  while(*p++!='\n');
+-  //while ((*q=*p++)!=0) if(*q!='\r')q++;
+-  while (*p) if((*q=*p++)!='\r')q++;
+-  free(t);
+-  return q-data;
+-}
+-
+-int cddb_gettitle(char *data,char *title,int n){
+-  char *p=data,*q=title;
+-  int i;
+-  for (i=0;i<=n;i++) {p=strstr(p,"TITLE");if(p==NULL) return 1;else p+=2;};
+-  p=strchr(p,'=')+1;
+-  while (*p!='\n' && *p!=0) *q++=*p++;
+-  if(*p==0) return 1;
+-  /*
+-  for (i=0;i<=n;i++) {p=strstr(p,"EXT");if(p==NULL) return 1;else p+=2;};
+-  p=strchr(p,'=')+1;
+-  if (*p!='\n' && *p!=0){
+-    *q++=' ';*q++='-';*q++=' ';
+-    while (*p!='\n' && *p!=0) *q++=*p++;
+-  };
+-  if(*p==0) return 1;
+-  */
+-  *q++=0;
+-  return 0;
+-}
+-
+-int cddb_check(struct cd_trk_list *tl,char *cddb)
+-{
+-  char title[200];
+-  int i;
+-  for (i=tl->min-1;i<=tl->max;i++)
+-  {
+-    if (cddb_gettitle(cddb,title,1+i-tl->min)) return 1;
+-  }
+-  return 0;
+-}
+-char *cddb_getdir(){
+-  static int f=1;
+-  static char path[500];
+-  if(f){
+-    if(getenv("XMCD_LIBDIR")==NULL) strcpy(path,opt_cddb_path);
+-    else sprintf(path,"%s/cddb",getenv("XMCD_LIBDIR"));
+-    f=0;
+-  }
+-  return path;
+-}
+-// returns: -1 on error, 0 for cddb query, 1 for file match
+-int cddb_main(struct cd_trk_list *tl)
+-{
+-  FILE *f;
+-  DIR *d;
+-  struct dirent *e;
+-  char *id2,*p,*cddb,*loc;
+-  int i,cddbs,locs;
+-  char id[12];
+-  char *path;
+-  char path2[500];
+-  cddb=malloc(CDDB_MAX);
+-  loc=malloc(CDDB_MAX);
+-  if (cddb==NULL||loc==NULL){
+-    return -1;
+-  }
+-  loc[0]=cddb[0]=0;
+-  sprintf(id,"%lx",cddb_discid(tl));
+-  if(!opt_save){
+-    path=cddb_getdir();
+-    if((d=opendir(path))!=NULL){
+-      while((e=readdir(d))!=NULL){
+-        sprintf(path2,"%s/%s/%s",path,e->d_name,id);
+-        f=fopen(path2,"r");
+-        if(f!=NULL) {
+-          locs=fread(loc,1,CDDB_MAX,f);
+-//  	  if(cddb_check(tl))return -1;
+-//          return 1;
+-	  break;
+-        }
+-      };
+-    }
+-  }
+-  if(!opt_save && !cddb_check(tl,loc)){
+-    tl->cddb=loc;
+-    tl->cddb_size=locs;
+-    free(cddb);
+-    return 1;
+-  }
+-  else{ 
+-    if(USE_CDDB){
+-      if(cddb_handshake()){
+-        fprintf(stderr,"%s: error in cddb handshaking\n",PROGNAME);
+-        free(cddb);free(loc);
+-        return -1;
+-      }
+-      p=path2;p+=sprintf(p,"%s %d",id,tl->max-tl->min+1);
+-      for(i=tl->min;i<=tl->max;i++) 
+-        p+=sprintf(p," %d",tl->starts[i-tl->min]+CD_MSF_OFFSET);
+-      p+=sprintf(p," %d\n",(tl->starts[tl->max-tl->min+1]-tl->starts[0])/75);
+-      if(!cddb_query(path2,&id2,&tl->gnr)){
+-        if ((cddbs=cddb_getdesc(tl->gnr,id2,cddb,CDDB_MAX))>=0){
+-            //if(cddb_check(tl))return -1;
+-            //return 0;
+-            if(!cddb_check(tl,cddb)){
+-              tl->cddb=cddb;
+-              tl->cddb_size=cddbs;
+-	      free(loc);
+-	      return 0;
+-	    }
+-        } 
+-        //else return -1;
+-      }
+-    }
+-    if(!cddb_check(tl,loc)){
+-      tl->cddb=loc;
+-      tl->cddb_size=locs;
+-      free(loc);
+-      return 1;
+-    }
+-  }
+-  free(cddb);free(loc);
+-  return -1;
+-}
+-
+-//end CDDB section
+ int cd_getinfo(char *cd_dev,struct cd_trk_list *tl)
+ {
+ 	int i;
+@@ -540,45 +262,51 @@
+ 	}
+ 	tl->starts[tl->max-tl->min+1]=Te.cdte_addr.lba;
+ 	tl->types[tl->max-tl->min+1]=Te.cdte_ctrl&CDROM_DATA_TRACK;
+-	
+-        i=cddb_main(tl);
+-	if(i==-1) {
+-	  fprintf(stderr,"%s: error retrieving cddb data\n",PROGNAME);
+-	  opt_save=opt_name=0;
+-	  tl->cddb=NULL;tl->gnr=NULL;opt_cddb=0;
+-	};
++
+ 	if(i==1) tl->gnr=NULL;
+ 	return 0;
+ }
+ 
+-void cd_disp_TOC(struct cd_trk_list *tl)
++void cd_disp_TOC(struct cd_trk_list *tl, int disp_TOC)
+ {
+ 	int i, len;
+-	char title[200];
+-	if(USE_CDDB){
+-	  cddb_gettitle(tl->cddb,title,0);
+-	  printf("\nDISK: %s\n\n",title);
+-	}
+-	printf("%5s %8s %8s %5s %9s %4s","track","start","length","type",
+-			"duration", "MB");
+-	if(USE_CDDB) printf(" Title");
+-	printf("\n");
++
++    if(disp_TOC){
++        printf("%5s %8s %8s %5s %9s %4s","track","start","length","type",
++                "duration", "MB");
++    }
++
++    if(disp_TOC){
++	 printf("\n");
++	}
++
++    int lastTrackStop = 0;
+ 	for (i=tl->min;i<=tl->max;i++)
+ 	{
+ 		len = tl->starts[i + 1 - tl->min] - tl->starts[i - tl->min];
+-		printf("%5d %8d %8d %5s %9s %4d",i,
+-			tl->starts[i-tl->min]+CD_MSF_OFFSET, len,
+-			tl->types[i-tl->min]?"data":"audio",resttime(len / 75),
+-			(len * CD_FRAMESIZE_RAW) >> (20 + opt_mono));
+-		if(USE_CDDB){
+-		  cddb_gettitle(tl->cddb,title,1+i-tl->min);
+-		  printf(" %s",title);
+-		}
+-		printf("\n");
+-	}
+-	printf("%5d %8d %8s %s\n",CDROM_LEADOUT,
+-			tl->starts[i-tl->min]+CD_MSF_OFFSET,"-","leadout");
+-	printf("\nCDDB DISCID: %lx\n",cddb_discid(tl));
++		if(disp_TOC){
++            printf("%5d %8d %8d %5s %9s %4d",i,
++                tl->starts[i-tl->min]+CD_MSF_OFFSET, len,
++                tl->types[i-tl->min]?"data":"audio",resttime(len / 75),
++                (len * CD_FRAMESIZE_RAW) >> (20 + opt_mono));
++         }
++
++		// record the data tracks start!
++		if(tl->types[i-tl->min]){
++		   d_tracks = new_dtracks(i, lastTrackStop);
++		}else {
++		    lastTrackStop=((tl->starts[i-tl->min]+CD_MSF_OFFSET +len));
++		}
++
++		if(disp_TOC){
++		   printf("\n");
++		}
++	}
++
++   if(disp_TOC){
++        printf("%5d %8d %8s %s\n",CDROM_LEADOUT,
++                tl->starts[i-tl->min]+CD_MSF_OFFSET,"-","leadout");
++	}
+ }
+ int cd_jc1(int *p1,int *p2) //nuova
+ 	/* looks for offset in p1 where can find a subset of p2 */
+@@ -637,23 +365,28 @@
+ 	struct Wavefile header;
+ 	int fd,bytes,i,n,q,space;
+ 	int bcount, sc, missing, speed = 0, ldp, now;
+-	char *slashp;
++	int stop_jittering_mode=0;
++	int readuntil;
+ 
+ 	if(tn<tl->min || tn>tl->max) return (-1);
+-	space = ((tl->starts[tn-tl->min+1]-tl->starts[tn-tl->min]) * 
++
++	if(d_tracks.track_start>0 && tn==d_tracks.track_start-1){
++	  printf("Entering a pre-DATA-track - we will avoid slipping into it..\n");
++	  stop_jittering_mode=1;
++	   readuntil=d_tracks.byte_start-magic_pre_data_track_limit;
++	} else {
++	   readuntil=tl->starts[tn-tl->min+1];
++	}
++
++	space = ((readuntil-tl->starts[tn-tl->min]) *
+ 			CD_FRAMESIZE_RAW) >> opt_mono;
+-	if(opt_name){
+-	  cddb_gettitle(tl->cddb,exec,1+tn-tl->min);
+-	  snprintf(nam,BLEN,"%s.wav",exec);
+-	  /* Remove "/" from filenames might used in cddb query */
+-          for(slashp = nam; (slashp = strchr(slashp, '/')); slashp++) *slashp = '-'; 
+-	}else snprintf(nam,BLEN,basename,tn);
++    snprintf(nam,BLEN,basename,tn);
+ 	if(tl->types[tn-tl->min]){
+ 		fprintf(stderr,"Track %d is not an audio track\n",tn);
+ 		return 1;
+ 	}
+ 	else printf("Dumping track %d: lba%7d to lba%7d (needs %d MB)\n",tn,
+-			tl->starts[tn-tl->min],tl->starts[tn-tl->min+1]-1, space>>20);
++			tl->starts[tn-tl->min],readuntil-1, space>>20);
+ 	tn-=tl->min;
+ 	if ((fd=open(nam,O_TRUNC|O_CREAT|O_WRONLY|O_APPEND))==-1){
+ 		fprintf(stderr,"%s: error opening wave file %s: %s\n",progname,nam,strerror(errno));
+@@ -670,17 +403,17 @@
+ 				tn + tl->min);
+ 		return 1;
+ 	}
+-	header=cd_newave((tl->starts[tn+1]-tl->starts[tn])*CD_FRAMESIZE_RAW);
++	header=cd_newave((readuntil-tl->starts[tn])*CD_FRAMESIZE_RAW);
+ 	if(write(fd,&header,sizeof(header))==-1){
+ 		fprintf(stderr,"%s: error writing wave file %s: %s\n",progname,nam,strerror(errno));
+ 		exit(1);
+ 	};
+ 	/* main loop */
+-	bytes=0;p1=buf1;p2=buf2;q=0;
++	bytes=0;p1=buf1;p2=buf2;q=0; int datatrack_has_spoken=0;
+ 	cd_read_audio(tl->starts[tn],opt_blocks,(char *)p1);
+ 
+ 	bcount = ldp = now = 0; sc = time((time_t*)0) - 1;
+-	for(i=tl->starts[tn]+opt_bufstep;i<tl->starts[tn+1];i+=opt_bufstep){
++	for(i=tl->starts[tn]+opt_bufstep;i<readuntil;i+=opt_bufstep){
+ 		/* jitter correction; a=number of bytes written */
+ 		if(opt_verbose){
+ 			now = time((time_t*) 0);
+@@ -700,6 +433,16 @@
+ 		}
+ 		q=0;
+ 		do {
++
++            if(stop_jittering_mode==1 && i + opt_blocks > readuntil){
++               if(datatrack_has_spoken==0){
++                  printf("Data track coming up - at %d we have read enough\n",d_tracks.byte_start-magic_pre_data_track_limit);
++                  datatrack_has_spoken=1;
++               }
++               //cd_read_audio(i, d_tracks.byte_start,(char *)p2);
++               break;
++            }
++
+ 			if((i+opt_blocks)<tl->starts[tn+1])
+ 				cd_read_audio(i,opt_blocks,(char *)p2);
+ 			else
+@@ -735,8 +478,13 @@
+ 		p=p1;p1=p2;p2=p;
+ 	}
+ 	/* dump last bytes */
+-	if (bytes<(tl->starts[tn+1]-tl->starts[tn])*CD_FRAMESIZE_RAW){
+-		n=(tl->starts[tn+1]-tl->starts[tn])*CD_FRAMESIZE_RAW-bytes;
++	int endpoint=tl->starts[tn+1];
++	if(stop_jittering_mode==1){
++        endpoint=d_tracks.byte_start - magic_pre_data_track_limit;
++	}
++
++	if (bytes<(endpoint-tl->starts[tn])*CD_FRAMESIZE_RAW){
++		n=(endpoint-tl->starts[tn])*CD_FRAMESIZE_RAW-bytes;
+ 		if(write(fd,p1,n)==-1){
+ 			fprintf(stderr,"%s: error writing wave file %s: %s\n",progname,nam,strerror(errno));
+ 			exit(1);
+@@ -775,15 +523,9 @@
+ 			"\t-e command\t: executes command for every copied track\n"
+ 			"\t\t\t\tembed %%s for track's filename\n"
+ 			"\t-s \t\t: enable free space checking before dumping a track\n"
+-			"\t-p \t\t: mono mode\n"
+-			"\t-C\t\t: enables cddbp\n"
+-			"\t-S\t\t: save cddb data in local database, forces -C\n"
+-			"\t-N\t\t: use cddb name, overrides -f\n"
+-			"\t-H host\t\t: cddbp server, default %s\n"
+-			"\t-P port\t\t: cddbp port number default %d\n"
+-			"\t-D dir\t\t: base of local cddb database\n",
++			"\t-p \t\t: mono mode\n",
+ 			PROGNAME,VERSION,CDDEVICE,OVERLAP,N_BUF,KEYLEN,
+-			RETRYS,OFS,D_MODE,CDDB_HOST,CDDB_PORT);
++			RETRYS,OFS,D_MODE);
+ 	exit(0);
+ }
+ 
+@@ -798,8 +540,6 @@
+ 	char cd_dev[BLEN+1]=CDDEVICE;
+ 	char basename[BLEN+1]="track%02d.wav";
+ 	char filter[BLEN+1] = "";
+-	char path[500];
+-	FILE *f;
+ 
+ 	progname=av[0];
+ 	optind=0;
+@@ -819,12 +559,6 @@
+ 			case 'm':opt_chmod=strtol(optarg,(char**)0,8);break;
+ 			case 'e':CPARG(filter);break;
+ 			case 's':opt_spchk=1;break;
+-			case 'C':opt_cddb=1;break;
+-			case 'S':opt_save=1;opt_cddb=1;break;
+-			case 'N':opt_name=1;break;
+-			case 'D':opt_cddb_path=strdup(optarg);break;
+-			case 'P':opt_cddb_port=atoi(optarg);break;
+-			case 'H':opt_cddb_host=strdup(optarg);break;
+ 			case 'p':opt_mono=1;break;
+ 		}
+ 	}
+@@ -875,11 +609,11 @@
+ 	opt_bufsize=CD_FRAMESIZE_RAW * opt_blocks;
+ 	opt_ibufsize=opt_bufsize/sizeof(int);
+ 	opt_bufstep=opt_blocks-opt_overlap;
+-	if((optind==ac)&&!all_tracks&&!opt_save) {
++	if((optind==ac)&&!all_tracks) {
+ 		if(disp_TOC){
+ 			if(cd_getinfo(cd_dev,&tl))
+ 				exit(1);
+-			cd_disp_TOC(&tl);
++			cd_disp_TOC(&tl, disp_TOC);
+ 			exit(0);
+ 		}
+ 		else usage();
+@@ -888,22 +622,9 @@
+ 	if(cd_getinfo(cd_dev,&tl)){
+ 		exit(1);
+ 	}
+-	if(disp_TOC)cd_disp_TOC(&tl);
+-	if(opt_save && (tl.cddb!=NULL)){
+-	  if(tl.gnr==NULL) 
+-	    fprintf(stderr,"%s: entry found in local database not saved\n",PROGNAME);
+-	  else{
+-	    sprintf(path,"%s/%s",cddb_getdir(),tl.gnr);
+-	    mkdir(path,0777);
+-	    sprintf(path,"%s/%s/%lx",cddb_getdir(),tl.gnr,cddb_discid(&tl));
+-	    if((f=fopen(path,"w"))==NULL){
+-	      perror ("dagrab");
+-	    }else{
+-	      fwrite(tl.cddb,1,tl.cddb_size,f);
+-	      fclose(f);
+-	    }
+-	  }
+-	};
++
++	cd_disp_TOC(&tl, disp_TOC);
++
+ 	if(opt_verbose) fprintf(stderr,
+ 			"sectors %3d overlap %3d key length %3d retrys %4d offset %3d\n",
+ 			opt_blocks,opt_overlap,opt_keylen,opt_retrys,opt_ofs);
+@@ -927,6 +648,6 @@
+ 	if(opt_verbose) {
+ 		printf("Total retries for jitter correction: %d\n", retries);
+ 	}
+-	printf("Done!                 \n");
++
+ 	exit(0);
+ }
