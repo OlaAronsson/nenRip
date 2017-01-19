@@ -24,7 +24,7 @@ ripcd.sh                : simply rips your CD at an avarage 160-200 kps
 sudo ripcd.sh install   : tries to fetch and install binaries needed  
 sudo ripcd.sh uninstall : will uninstall nenrip  
 ripcd.sh auto           : keep going if you manage to feed your cdrom 
-                          during mp3-decoding  
+                          during wav-encoding  
 ripcd.sh highq          : use (really) high quality encoding. 320 kps
                           is default hq, it's a configurable  
 ripcd.sh -h             : display help  
