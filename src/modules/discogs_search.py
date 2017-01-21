@@ -268,7 +268,8 @@ def parseResult(results, typeStr, namedRelease, namedYear, alreadyFoundResults, 
                         namedArtistToLookup = namedArtist.strip()
                         if artistToCompare != namedArtistToLookup:
                             matchedArtist=1
-                            print " -artist "+artistToCompare+" was NOT matched"
+                            if verbose == 0:
+                                print " -artist "+artistToCompare+" was NOT matched"
                         else:
                             if verbose == 0:
                                 print " -artist was matched"
