@@ -129,9 +129,9 @@ getMetaDataFromDiscogsviAPI(){
        ALBUMARTURL="`cat /tmp/discogsMeta_1 | grep ALBUMARTURL | cut -d":" -f 2-`"
        TRACKS=`cat /tmp/discogsMeta_1 | grep TRACKS | cut -d":" -f2`
 
+       formatArtistAlbumGenre
        makeTempFolders
        cat /tmp/discogsMeta_1 | grep "01_" -A$TRACKS | sed s#' '#'_'#g > "$FS_ROOT/$ARTIST/$ALBUM/"trackList
-       formatArtistAlbumGenre
 
        logit "Located meta-data from Discog's API:"
        logit "ARTIST      : $ARTIST"
