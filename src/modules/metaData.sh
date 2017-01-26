@@ -46,8 +46,8 @@ getArtistAndAlbumFromCddb(){
 		apa=`cat /tmp/cddbOut2`
 		echo $apa | grep No_match >/dev/null 2>&1 && NO_MATCH=0
 		cat /tmp/cddbOut1 | grep -C1 artist > /tmp/apa2
-      	ARTIST=`cat /tmp/apa2 | grep artist | tail -1 | cut -d":" -f2 | cut -b 2- | sed s#" "#"_"#g | sed -E "s#_\([0-9]+\)##g"`
-	    ALBUM=`cat /tmp/apa2 | grep title | tail -1 | cut -d":" -f2 | cut -b 2- | sed s#" "#"_"#g | sed -E "s#_\([0-9]+\)##g"`
+      	ARTIST=`cat /tmp/apa2 | grep artist | tail -1 | cut -d":" -f2 | cut -b 2- | sed s#" "#"_"#g | sed -E "s#_\([0-9]+\)##g" | sed -E "s#_\[.*[0-9]+\]##g"`
+	    ALBUM=`cat /tmp/apa2 | grep title | tail -1 | cut -d":" -f2 | cut -b 2- | sed s#" "#"_"#g | sed -E "s#_\([0-9]+\)##g" | sed -E "s#_\[.*[0-9]+\]##g"`
 	    HIT="$ARTIST:$ALBUM"
      	l=`echo $HIT | wc -c | sed s#" "##g`
     	if [ $l -gt 4 ]; then
@@ -56,7 +56,7 @@ getArtistAndAlbumFromCddb(){
 	            echo "Auto detect assumed $HIT to be correct. Ripping now!"
 	            NO_MATCH=1
 	        else
-	        yesToDoIt "cddb query returned $HIT. This seem fine" && NO_MATCH=1
+	        yesToDoIt "cddb query returned $HIT - This seem fine" && NO_MATCH=1
 	       fi
     	fi
 
