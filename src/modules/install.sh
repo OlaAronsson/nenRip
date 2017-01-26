@@ -235,6 +235,32 @@ chkForConfig(){
     logit "LOGFILE=$LOGFILE"
     logit "DISCOGSTOKEN=$DISCOGSTOKEN"
 	logit " "
+
+    usedMP3RootIsFAT && FATMODE=0 && echo "Since your MP3-ROOT $MP3_ROOT seems to be" && echo "mounted on a FAT-filesystem, '?' and ':' in filenames" && echo "will unfortunately NOT be allowed.."
+}
+
+usedMP3RootIsFAT(){
+    mount -l | grep "/dev/"  | cut -d' ' -f3 | egrep "[ a-z ]" > /tmp/devicesMounted
+    mp3RootDepth=`echo $MP3_ROOT | sed s#"/"#" "#g | wc -w`
+    candidate=
+    while [ $mp3RootDepth -gt 0 ]
+    do
+       candidate=`echo $MP3_ROOT | cut -d'/' -f -$mp3RootDepth`
+       hit=`cat /tmp/devicesMounted | grep $candidate | wc -l`
+       if [ $hit -eq 1 ]; then
+          if [ "$candidate" == "`cat /tmp/devicesMounted | grep $candidate`" ]; then
+             break
+           else
+             candidate=
+             break
+          fi
+        fi
+       candidate=
+       mp3RootDepth=`expr $mp3RootDepth - 1`
+    done
+    rm -rf /tmp/devicesMounted
+    [ ! -z $candidate ] && mount -l | grep $candidate | cut -d' ' -f5 | grep fat > /dev/null 2>&1 && return 0
+    return 1
 }
 
 ##

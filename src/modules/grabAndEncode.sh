@@ -177,9 +177,9 @@ mp3Encode(){
 	rm -rf *.mp3
 	tracks=`ls | grep \.wav`
 
-	WORKROOT=$MP3_ROOT/$ARTIST/$ALBUM
-    if [ ! -d $WORKROOT ]; then
-	  mkdir -p $WORKROOT
+	WORKROOT="$MP3_ROOT/$ARTIST/$ALBUM"
+    if [ ! -d "$WORKROOT" ]; then
+	  mkdir -p "$WORKROOT"
 	fi
 
     [ $GRABBED_ALREADY_FROM_MANUAL -eq 1 ] && tryDownloadAlbumArt
@@ -228,7 +228,7 @@ mp3Encode(){
 	   fi
 	done
 	rm -rf trackList > /dev/null 2>&1
-	cd $FS_ROOT && rm -rf $ARTIST
+	cd "$FS_ROOT" && rm -rf "$ARTIST"
 	logit "DONE."
 	echo    
 }
@@ -239,9 +239,9 @@ flacEncode(){
 	logit "FLAC encoding tracks.."
 	rm -rf *.mp3
 	tracks=`ls | grep \.wav`
-	WORKROOT=$MP3_ROOT/$ARTIST/$ALBUM
-    if [ ! -d $WORKROOT ]; then
-	  mkdir -p $WORKROOT
+	WORKROOT="$MP3_ROOT/$ARTIST/$ALBUM"
+    if [ ! -d "$WORKROOT" ]; then
+	  mkdir -p "$WORKROOT"
 	fi
 	[ $GRABBED_ALREADY_FROM_MANUAL -eq 1 ] && tryDownloadAlbumArt
 	index=1
@@ -271,8 +271,8 @@ flacEncode(){
 		       logit "flac -f -s --best --delete-input-file --tag=\"TRACK=$index/$noOfTracks\" --tag=\"TITLE=$trackTitle\" --tag=\"ALBUM=$trackAlbum\" --tag=\"ARTIST=$trackArtist\" --tag=\"GENRE=$musicGenre\" --tag=\"YEAR=$trackYear\" $f -o $WORKROOT/$trackFn"
 		       flac -s -f --best --delete-input-file --tag="TRACK=$index/$noOfTracks" --tag="TITLE=$trackTitle" --tag="ALBUM=$trackAlbum" --tag="ARTIST=$trackArtist" --tag="GENRE=$musicGenre" --tag="YEAR=$trackYear" $f -o $WORKROOT/$trackFn
 		    else
-		       logit "flac -f -s --best --picture $WORKROOT/cover.jpg --delete-input-file --tag=\"TRACK=$index/$noOfTracks\" --tag=\"TITLE=$trackTitle\" --tag=\"ALBUM=$trackAlbum\" --tag=\"ARTIST=$trackArtist\" --tag=\"GENRE=$musicGenre\" --tag=\"YEAR=$trackYear\" $f -o $WORKROOT/$trackFn"
-		       flac -f -s --best --picture $WORKROOT/cover.jpg --delete-input-file --tag="TRACK=$index/$noOfTracks" --tag="TITLE=$trackTitle" --tag="ALBUM=$trackAlbum" --tag="ARTIST=$trackArtist" --tag="GENRE=$musicGenre" --tag="YEAR=$trackYear" $f -o $WORKROOT/$trackFn
+		       logit "flac -f -s --best --picture "$WORKROOT/cover.jpg" --delete-input-file --tag=\"TRACK=$index/$noOfTracks\" --tag=\"TITLE=$trackTitle\" --tag=\"ALBUM=$trackAlbum\" --tag=\"ARTIST=$trackArtist\" --tag=\"GENRE=$musicGenre\" --tag=\"YEAR=$trackYear\" $f -o $WORKROOT/$trackFn"
+		       flac -f -s --best --picture "$WORKROOT/cover.jpg" --delete-input-file --tag="TRACK=$index/$noOfTracks" --tag="TITLE=$trackTitle" --tag="ALBUM=$trackAlbum" --tag="ARTIST=$trackArtist" --tag="GENRE=$musicGenre" --tag="YEAR=$trackYear" $f -o $WORKROOT/$trackFn
 		    fi
 		   index=`expr $index + 1`
 
@@ -280,7 +280,7 @@ flacEncode(){
 	   fi
 	done
 	rm -rf trackList > /dev/null 2>&1
-	cd $FS_ROOT && rm -rf $ARTIST
+	cd "$FS_ROOT" && rm -rf "$ARTIST"
 	logit "DONE."
 	echo
 }

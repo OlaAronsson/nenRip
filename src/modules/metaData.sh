@@ -48,6 +48,13 @@ getArtistAndAlbumFromCddb(){
 		cat /tmp/cddbOut1 | grep -C1 artist > /tmp/apa2
       	ARTIST=`cat /tmp/apa2 | grep artist | tail -1 | cut -d":" -f2 | cut -b 2- | sed s#" "#"_"#g | sed -E "s#_\([0-9]+\)##g" | sed -E "s#_\[.*[0-9]+\]##g"`
 	    ALBUM=`cat /tmp/apa2 | grep title | tail -1 | cut -d":" -f2 | cut -b 2- | sed s#" "#"_"#g | sed -E "s#_\([0-9]+\)##g" | sed -E "s#_\[.*[0-9]+\]##g"`
+
+	    if [ $FATMODE -eq 0 ]; then
+	       logit "FAT-mode is on (your device is a FAT-device) : '?' and ':' WILL be stripped of titles and artist names."
+	       ARTIST=`echo $ARTIST | sed s#"?"##g | sed s#":"##g`
+	       ALBUM=`echo $ALBUM | sed s#"?"##g | sed s#":"##g`
+	    fi
+
 	    HIT="$ARTIST:$ALBUM"
      	l=`echo $HIT | wc -c | sed s#" "##g`
     	if [ $l -gt 4 ]; then
@@ -399,20 +406,20 @@ fi
 }
 
 writeMetadataFile(){
-WORKROOT=$MP3_ROOT/$ARTIST/$ALBUM
-if [ ! -d $WORKROOT ]; then
-  mkdir -p $WORKROOT
+WORKROOT="$MP3_ROOT/$ARTIST/$ALBUM"
+if [ ! -d "$WORKROOT" ]; then
+  mkdir -p "$WORKROOT"
 fi
-[ -f $WORKROOT/.metadata ] && rm -rf $WORKROOT/.metadata
+[ -f "$WORKROOT/.metadata" ] && rm -rf "$WORKROOT/.metadata"
 cd-discid $CDROMDEV > $CDID_FILE
 echo
 logit "Writing metadata file to $WORKROOT/.metadata"
 echo
 CDID=`cat $CDID_FILE`
-echo "CDID        : $CDID" > $WORKROOT/.metadata
-echo "ARTIST      : $ARTIST" >> $WORKROOT/.metadata
-echo "ALBUM       : $ALBUM" >> $WORKROOT/.metadata
-echo "YEAR        : $YEAR" >> $WORKROOT/.metadata
-echo "GENRE       : $GENRE" >> $WORKROOT/.metadata
-echo "ALBUMARTURL : $ALBUMARTURL" >> $WORKROOT/.metadata
+echo "CDID        : $CDID" > "$WORKROOT/.metadata"
+echo "ARTIST      : $ARTIST" >> "$WORKROOT/.metadata"
+echo "ALBUM       : $ALBUM" >> "$WORKROOT/.metadata"
+echo "YEAR        : $YEAR" >> "$WORKROOT/.metadata"
+echo "GENRE       : $GENRE" >> "$WORKROOT/.metadata"
+echo "ALBUMARTURL : $ALBUMARTURL" >> "$WORKROOT/.metadata"
 }

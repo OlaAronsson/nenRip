@@ -53,6 +53,13 @@ ARGS="$@"
 # grab current fs location
 HERE=`pwd`
 
+# Meaning, until we detect that you're using a FAT-fs
+# for saving your output, we will accept '?' and ':'
+# in file names; is we detect ootherwise, these
+# characters will simple be stripped from artist's
+# and album names!
+FATMODE=1
+
 # ------------------  MAIN  -------------------
 
 main(){
