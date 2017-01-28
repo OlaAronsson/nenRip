@@ -2,7 +2,7 @@
    DAGRAB - dumps digital audio from cdrom to riff wave files
 
    (C) 1998,1999 Marcello Urbani <murbani@libero.it>
-  
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2, or (at your option)
@@ -367,6 +367,9 @@ int cd_read_track(char *basename,int tn,struct cd_trk_list *tl,
 	int bcount, sc, missing, speed = 0, ldp, now;
 	int stop_jittering_mode=0;
 	int readuntil;
+
+    if(tl->starts[tn-tl->min]<0)
+        tl->starts[tn-tl->min] = 0;
 
 	if(tn<tl->min || tn>tl->max) return (-1);
 
