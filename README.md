@@ -36,6 +36,9 @@ The script is delivered as is, there will be no fixes unless I really find it pr
 News 170119: 
 I realised I wanted all my CDs in flac so I added flac encoding and started re-ripping all. There was the ancient (well known) problem of dagrab (I threw out CDPARANOIA) not coping with CDs featuring data tracks - so I rebuilt dagrab too and added the new source code to this release, this patched version of Marcello Urbani's simple and great original ripper code will simply skip data tracks (I removed the cddb support too, calling it dagrab-0.3.5-minified). Then I wanted album art to be included too so I added that feature as well. And.. what else.. yeah added "fully" manual support so that I could rip really anything my cdrom could read, home-burnt CDs or just whatever. I added support for the Discogs meta data API and included an API token (I cannot guarantee  that this token will be around, I strongly urge users to go and get their own instead, it's a free and simple procedure). I'm always running Debian these days and the gnome-terminal originally used just didn't cut it anymore, threw it out and replaced it with a good old reliable xterm. And.. well just a bit more of everything, splitting the main script into modules, adding a python script for Discogs (woho, my first real python script I think, so surely it could be greatly improved but I have to move on and it works just fine).
 
+News 170604:
+Tested and verified the thing on Mint 18.1 Mate
+
 Ok, enough said - enjoy!
 
   
