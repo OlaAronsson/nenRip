@@ -104,9 +104,6 @@ runUnInstall(){
 	rm -rf /usr/share/applications/nenTmpLink.desktop > /dev/null 2>&1   
 	rm -rf $LOCAL_CFG > /dev/null 2>&1
 	update-desktop-database -q > /dev/null 2>&1
-	# unity --reset-icons
-	# gconftool-2 -s -t string /apps/gnome-settings/gnome-panel/history-gnome-run
-	# rm -rf $HOME/.local/share/webkit/icondatabase/WebpageIcons.db
 	cd $HERE
 }
 
@@ -292,13 +289,14 @@ init(){
 	which flac || echo "You need flac - as root (or sudo) do apt-get install flac"
 	which mogrify >/dev/null 2>&1 || BAIL=0
     which mogrify || echo "You need mogrify - as root (or sudo) do apt-get install mogrify"
+	which xterm >/dev/null 2>&1 || BAIL=0
+    which xterm || echo "You need xterm - as root (or sudo) do apt-get install xterm"
     [ ! -f /var/lib/dpkg/info/python-requests.postinst ] && echo "You need python-requests - as root (or sudo) do apt-get install python-requests" && BAIL=0
     argparselib=`find /usr/lib/python* -name "argparse.py"`
     have_arg_parse=0
     echo $argparselib | grep argparse > /dev/null 2>&1 || have_arg_parse=1
     [ $have_arg_parse -eq 1 ] && echo "You need python-argparse - as root (or sudo) do apt-get install python-argparse" && BAIL=0
     [ -f /tmp/discogsHits ] && rm -rf /tmp/discogsHits
-	[ ! -x /usr/bin/gnome-terminal ] && echo "cannot find /usr/bin/gnome-terminal - you are not running gnome?!" && BAIL=0
 	logit "DONE."
 	echo
 
@@ -340,6 +338,7 @@ chkPackages(){
 	which wget >/dev/null 2>&1 || apt-get install wget
 	which flac >/dev/null 2>&1 || apt-get install flac
     which mogrify >/dev/null 2>&1 || apt-get install mogrify
+    which xterm >/dev/null 2>&1 || apt-get install xterm
     [ ! -f /var/lib/dpkg/info/python-requests.postinst ] && apt-get install python-requests
     argparselib=`find /usr/lib/python* -name "argparse.py"`
     have_arg_parse=0
