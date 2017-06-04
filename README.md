@@ -32,7 +32,6 @@ sudo ripcd.sh uninstall - will uninstall nenrip
 ripcd.sh auto           - keep going if you manage to feed your cdrom during mp3-decoding
 ripcd.sh highq          - use high quality encoding. 320 kps default or higher.
 ripcd.sh flac           - use flac encoding
-
 </pre>
 
 The script is delivered as is, there will be no fixes unless I really find it proper and enjoyable to dig in again. Fact is, it works swell for me at least, just having ripped some 1000 CDs with it. Alright - enjoy ola@nollettnoll.net
