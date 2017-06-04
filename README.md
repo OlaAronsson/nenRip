@@ -1,5 +1,9 @@
 #***nenRip 2.0***
 
+Script utility to rip CDs in Linux (ie, systems supporting apt), I've been running it on various Debians and Ubuntus and now also Mints. Upon installation it will setup and install a .desktop file too so you can run it from your dash home directly. Example runs and details can be found at
+
+http://www.thehole.black/nenRip
+
 This little tool can rip CDs. It was written by Ola Aronsson ages ago for some old ubuntu version. Then Ola suddenly needed to rip CDs again so he needed it to run on Ubuntu 12.04, a lot of things (see cddb-support in particular) had changed. So - he re-wrote it. It now supports a high-quality switch, cdrom detection, toggling between CDPARANOIA/DAGRAB mode and an auto-flag to simply go on forever if you happen to be sitting by your cdrom and can keep feeding discs.
 
 BEFORE RUNNING - PLEASE CONFIGURE THE (small) To Configure-SECTION ON TOP OF THE SCRIPT!
