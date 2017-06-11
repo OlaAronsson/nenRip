@@ -149,6 +149,7 @@ getMetaDataFromDiscogsviAPI(){
        echo
        echo "Tracklist:"
        cat "$FS_ROOT/$ARTIST/$ALBUM/"trackList
+       cp "$FS_ROOT/$ARTIST/$ALBUM/"trackList /tmp/discogs_tracks2
 
        echo
        DISCOGS_GOT_HIT=0
@@ -204,10 +205,10 @@ getMetaDataFromDiscogsParseHTML(){
 
         [ -f /tmp/albumArtSrc ] && relLink=`cat /tmp/albumArtSrc` && rm -rf /tmp/albumArtSrc && logit "Located relative link : $relLink"
         rm -rf /tmp/topThree
-        DISCOGS_HIT=1
-        [ `echo $relLink | wc -c` -gt 4 ] && echo $relLink | egrep "[0-9]" >/dev/null 2>&1 && echo "Got discocs hit!" && DISCOGS_HIT=0
+        DISCOGS_GOT_HIT=1
+        [ `echo $relLink | wc -c` -gt 4 ] && echo $relLink | egrep "[0-9]" >/dev/null 2>&1 && echo "Got discocs hit!" && DISCOGS_GOT_HIT=0
 
-        if [ $DISCOGS_HIT -eq 0 ]; then
+        if [ $DISCOGS__GOT_HIT -eq 0 ]; then
             [ "`echo $ALBUM | tr '[:upper:]' '[:lower:]'`" == ".cd" ] && ALBUM='666'
             actualLink="http://www.discogs.com$relLink"
             echo

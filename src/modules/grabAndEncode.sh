@@ -153,7 +153,7 @@ grabWav(){
 			outP=`ls`
 			rm -rf trackList
 
-			if [ $DISCOGS_HIT -eq 0 ]; then
+			if [ $DISCOGS_GOT_HIT -eq 0 ]; then
 			    mv /tmp/discogs_tracks2 trackList
 			    rm -rf /tmp/discogs_tracks2
 			else
